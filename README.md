@@ -19,15 +19,31 @@ Qwen OAuth authentication plugin for [OpenCode](https://opencode.ai) with multi-
 
 ## Installation
 
+### Quick Install (Recommended)
+
+Run one command to automatically configure OpenCode:
+
 ```bash
-# Using Bun (recommended)
+bunx opencode-qwen-auth install
+# or
+npx opencode-qwen-auth install
+```
+
+This adds the plugin and Qwen provider configuration to your `opencode.json`.
+
+### Manual Installation
+
+If you prefer manual setup:
+
+```bash
+# Using Bun
 bun add opencode-qwen-auth
 
 # Using npm
 npm install opencode-qwen-auth
 ```
 
-Add to your `opencode.json`:
+Then add to your `opencode.json`:
 
 ```json
 {

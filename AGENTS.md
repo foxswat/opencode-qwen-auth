@@ -16,6 +16,7 @@ OpenCode plugin for Qwen OAuth authentication with:
 | File | Purpose |
 |------|---------|
 | `src/index.ts` | Plugin entrypoint |
+| `src/cli/install.ts` | CLI installer (`bunx opencode-qwen-auth install`) |
 | `src/plugin/` | Core plugin logic, account management |
 | `src/qwen/oauth.ts` | OAuth device flow implementation |
 | `src/transform/` | API request/response transformation |
@@ -24,14 +25,14 @@ OpenCode plugin for Qwen OAuth authentication with:
 
 ```bash
 bun install     # Install dependencies
-bun test        # Run tests (41 tests)
+bun test        # Run tests (50 tests)
 bun run build   # Build for production
 bun run lint    # Run Biome linter
 ```
 
 ## Testing
 
-- Unit tests: `test/*.test.ts` (auth, token, transform, account, url)
+- Unit tests: `test/*.test.ts` (auth, token, transform, account, url, cli)
 - Mock server: `test/mock-server/server.ts`
 - E2E tests: `test/e2e.test.ts`
 
