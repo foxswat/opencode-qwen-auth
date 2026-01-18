@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/opencode-qwen-auth.svg)](https://www.npmjs.com/package/opencode-qwen-auth)
 [![npm downloads](https://img.shields.io/npm/dm/opencode-qwen-auth.svg)](https://www.npmjs.com/package/opencode-qwen-auth)
-[![CI](https://github.com/anthropics/opencode-qwen-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/anthropics/opencode-qwen-auth/actions)
+[![CI](https://github.com/foxswat/opencode-qwen-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/foxswat/opencode-qwen-auth/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Built with Bun](https://img.shields.io/badge/Built%20with-Bun-black?logo=bun)](https://bun.sh)
 
