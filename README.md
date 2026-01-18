@@ -19,6 +19,14 @@ Qwen OAuth authentication plugin for [OpenCode](https://opencode.ai) with multi-
 
 ## Installation
 
+### Let an LLM Do It
+
+Paste this into any LLM agent (Claude Code, OpenCode, Cursor, etc.):
+
+```
+Install the opencode-qwen-auth plugin by following: https://raw.githubusercontent.com/foxswat/opencode-qwen-auth/main/README.md
+```
+
 ### Quick Install (Recommended)
 
 Run one command to automatically configure OpenCode:
