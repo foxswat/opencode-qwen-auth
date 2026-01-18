@@ -92,9 +92,30 @@ Then add to your `opencode.json`:
 
 To customize behavior, create `.opencode/qwen.json` (project) or `~/.config/opencode/qwen.json` (user-level) with only the options you want to override:
 
-```json
+```jsonc
 {
+  // API endpoint (default: https://portal.qwen.ai/v1)
+  "base_url": "https://portal.qwen.ai/v1",
+
+  // OAuth client ID (default: built-in)
+  "client_id": "your-client-id",
+
+  // OAuth server URL (default: https://chat.qwen.ai)
+  "oauth_base_url": "https://chat.qwen.ai",
+
+  // Account rotation: "round-robin" or "sequential" (default: round-robin)
   "rotation_strategy": "sequential",
+
+  // Refresh tokens before expiry (default: true)
+  "proactive_refresh": true,
+
+  // Seconds before expiry to trigger refresh (default: 300)
+  "refresh_window_seconds": 300,
+
+  // Maximum wait time when rate limited (default: 300)
+  "max_rate_limit_wait_seconds": 300,
+
+  // Suppress informational messages (default: false)
   "quiet_mode": true
 }
 ```
