@@ -16,11 +16,11 @@
   "author": "OpenCode Qwen Auth Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anthropics/opencode-qwen-auth.git"
+    "url": "git+https://github.com/foxswat/opencode-qwen-auth.git"
   },
-  "homepage": "https://github.com/anthropics/opencode-qwen-auth#readme",
+  "homepage": "https://github.com/foxswat/opencode-qwen-auth#readme",
   "bugs": {
-    "url": "https://github.com/anthropics/opencode-qwen-auth/issues"
+    "url": "https://github.com/foxswat/opencode-qwen-auth/issues"
   },
   "keywords": [
     "opencode",
