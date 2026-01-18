@@ -57,3 +57,21 @@ Account tokens: `~/.config/opencode/qwen-auth-accounts.json`
 - Uses `proper-lockfile` for file locking during account storage
 - SSE streaming transformation in `src/transform/sse.ts`
 - Zod schemas for configuration validation
+
+## Contributing
+
+**Branch protection is enabled.** Direct pushes to `main` are blocked.
+
+To make changes:
+1. Create a feature branch: `git checkout -b feature/my-change`
+2. Make changes and commit
+3. Push and create PR: `git push -u origin feature/my-change && gh pr create`
+4. Wait for CI to pass (ubuntu, macos, windows)
+5. Merge PR (branch auto-deletes after merge)
+
+## Release Process
+
+1. Create a branch and bump version: `npm version patch|minor|major --no-git-tag-version`
+2. Commit and create PR
+3. After merge, create GitHub release with tag `vX.Y.Z`
+4. Release workflow auto-publishes to npm via OIDC (no tokens needed)
