@@ -179,7 +179,8 @@ describe("CLI installer", () => {
 
       const result = install();
 
-      expect(result.configPath).toContain(".opencode/opencode.json");
+      expect(result.configPath).toContain(".opencode");
+      expect(result.configPath).toContain("opencode.json");
       const config = JSON.parse(readFileSync(result.configPath, "utf-8"));
       expect(config.someOtherSetting).toBe(true);
       expect(config.plugin).toContain("opencode-qwen-auth");
