@@ -88,18 +88,14 @@ Then add to your `opencode.json`:
 
 ## Configuration
 
-Create `.opencode/qwen.json` in your project or `~/.config/opencode/qwen.json` for user-level config:
+**No configuration required.** The plugin works out of the box with sensible defaults.
+
+To customize behavior, create `.opencode/qwen.json` (project) or `~/.config/opencode/qwen.json` (user-level) with only the options you want to override:
 
 ```json
 {
-  "base_url": "https://portal.qwen.ai/v1",
-  "client_id": "f0304373b74a44d2b584a3fb70ca9e56",
-  "oauth_base_url": "https://chat.qwen.ai",
-  "rotation_strategy": "round-robin",
-  "proactive_refresh": true,
-  "refresh_window_seconds": 300,
-  "max_rate_limit_wait_seconds": 300,
-  "quiet_mode": false
+  "rotation_strategy": "sequential",
+  "quiet_mode": true
 }
 ```
 
