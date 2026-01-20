@@ -3,8 +3,29 @@ import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import lockfile from "proper-lockfile";
+import type { RotationStrategy } from "./config/schema";
+import {
+  type AccountWithMetrics,
+  getHealthTracker,
+  getTokenTracker,
+  type HealthScoreTracker,
+  selectHybridAccount,
+  type TokenBucketTracker,
+} from "./rotation";
 
-export type RotationStrategy = "round-robin" | "sequential";
+export type { RotationStrategy } from "./config/schema";
+
+/**
+ * Options for selectAccount when using hybrid strategy.
+ */
+export interface SelectAccountOptions {
+  /** Health score tracker for hybrid selection */
+  healthTracker?: HealthScoreTracker;
+  /** Token bucket tracker for hybrid selection */
+  tokenTracker?: TokenBucketTracker;
+  /** PID offset for distributing sessions across accounts */
+  pidOffset?: number;
+}
 
 export interface AccountHealth {
   successCount: number;
@@ -207,9 +228,68 @@ export function selectAccount(
   storage: AccountStorage,
   strategy: RotationStrategy,
   now: number,
+  options?: SelectAccountOptions,
 ): { account: QwenAccount; index: number; storage: AccountStorage } | null {
   const total = storage.accounts.length;
   if (total === 0) return null;
+
+  if (strategy === "hybrid") {
+    const healthTracker = options?.healthTracker ?? getHealthTracker();
+    const tokenTracker = options?.tokenTracker ?? getTokenTracker();
+    const pidOffset = options?.pidOffset ?? 0;
+
+    const accountsWithMetrics: AccountWithMetrics[] = storage.accounts.map(
+      (account, idx) => ({
+        index: idx,
+        lastUsed: account.lastUsed,
+        healthScore: healthTracker.getScore(idx),
+        tokens: tokenTracker.getTokens(idx),
+        isRateLimited: !!(
+          account.rateLimitResetAt && account.rateLimitResetAt > now
+        ),
+      }),
+    );
+
+    if (pidOffset > 0 && accountsWithMetrics.length > 1) {
+      const rotateBy = pidOffset % accountsWithMetrics.length;
+      for (let i = 0; i < rotateBy; i++) {
+        const first = accountsWithMetrics.shift();
+        if (first) accountsWithMetrics.push(first);
+      }
+    }
+
+    const result = selectHybridAccount(
+      accountsWithMetrics,
+      healthTracker.config.minUsable,
+      tokenTracker.getMaxTokens(),
+    );
+
+    if (!result) {
+      return null;
+    }
+
+    const selectedIndex = result.index;
+    const selectedAccount = storage.accounts[selectedIndex];
+    if (!selectedAccount) return null;
+
+    tokenTracker.consume(selectedIndex);
+
+    const updatedAccounts = [...storage.accounts];
+    updatedAccounts[selectedIndex] = {
+      ...selectedAccount,
+      lastUsed: now,
+    };
+    const updated = normalizeStorage({
+      version: STORAGE_VERSION,
+      accounts: updatedAccounts,
+      activeIndex: selectedIndex,
+    });
+    return {
+      account: updatedAccounts[selectedIndex],
+      index: selectedIndex,
+      storage: updated,
+    };
+  }
 
   const startIndex =
     strategy === "round-robin"
@@ -223,12 +303,17 @@ export function selectAccount(
     if (account.rateLimitResetAt && account.rateLimitResetAt > now) {
       continue;
     }
+    const updatedAccounts = [...storage.accounts];
+    updatedAccounts[index] = {
+      ...account,
+      lastUsed: now,
+    };
     const updated = normalizeStorage({
       version: STORAGE_VERSION,
-      accounts: storage.accounts,
+      accounts: updatedAccounts,
       activeIndex: index,
     });
-    return { account, index, storage: updated };
+    return { account: updatedAccounts[index], index, storage: updated };
   }
 
   return null;

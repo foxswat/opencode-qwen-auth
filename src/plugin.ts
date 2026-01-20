@@ -7,18 +7,25 @@ import {
   markRateLimited,
   recordFailure,
   recordSuccess,
+  type SelectAccountOptions,
   saveAccounts,
   selectAccount,
   updateAccount,
   upsertAccount,
 } from "./plugin/account";
 import { accessTokenExpired, isOAuthAuth } from "./plugin/auth";
-import { loadConfig } from "./plugin/config";
+import { type LoadedConfig, loadConfig } from "./plugin/config";
 import {
   createLogger,
   initDebugFromEnv,
   setLoggerQuietMode,
 } from "./plugin/logger";
+import {
+  getHealthTracker,
+  getTokenTracker,
+  initHealthTracker,
+  initTokenTracker,
+} from "./plugin/rotation";
 import { type QwenTokenRefreshError, refreshAccessToken } from "./plugin/token";
 import type {
   AuthDetails,
@@ -228,14 +235,66 @@ async function ensureAuthInStorage(
   return updated;
 }
 
+function initializeTrackers(config: LoadedConfig): void {
+  initHealthTracker(
+    config.health_score
+      ? {
+          initial: config.health_score.initial,
+          successReward: config.health_score.success_reward,
+          rateLimitPenalty: config.health_score.rate_limit_penalty,
+          failurePenalty: config.health_score.failure_penalty,
+          recoveryRatePerHour: config.health_score.recovery_rate_per_hour,
+          minUsable: config.health_score.min_usable,
+        }
+      : undefined,
+  );
+  initTokenTracker(
+    config.token_bucket
+      ? {
+          maxTokens: config.token_bucket.max_tokens,
+          regenerationRatePerMinute:
+            config.token_bucket.regeneration_rate_per_minute,
+        }
+      : undefined,
+  );
+}
+
+function getPidOffset(config: LoadedConfig): number {
+  if (!config.pid_offset_enabled) return 0;
+  return process.pid;
+}
+
+function showMigrationNoticeIfNeeded(config: LoadedConfig): void {
+  if (
+    config.rotation_strategy === "hybrid" &&
+    !config.isExplicitStrategy &&
+    !config.quiet_mode
+  ) {
+    console.log(
+      "[qwen-auth] Note: Default rotation strategy changed from 'round-robin' to 'hybrid'.",
+    );
+    console.log(
+      '            Set rotation_strategy: "round-robin" in config to keep previous behavior.',
+    );
+  }
+}
+
 export const createQwenOAuthPlugin =
   (providerId: string): Plugin =>
   async ({ client, directory }: PluginContext) => {
     const config = loadConfig(directory);
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
+    initializeTrackers(config);
+    showMigrationNoticeIfNeeded(config);
 
-    logger.debug("Plugin initialized", { providerId, directory });
+    const pidOffset = getPidOffset(config);
+    logger.debug("Plugin initialized", {
+      providerId,
+      directory,
+      strategy: config.rotation_strategy,
+      pidOffset: config.pid_offset_enabled ? pidOffset : "disabled",
+    });
 
     const oauthOptions = buildOAuthOptions(config);
 
@@ -272,6 +331,13 @@ export const createQwenOAuthPlugin =
               init?: RequestInit,
             ): Promise<Response> => {
               let attempts = 0;
+              const healthTracker = getHealthTracker();
+              const tokenTracker = getTokenTracker();
+              const selectOptions: SelectAccountOptions = {
+                healthTracker,
+                tokenTracker,
+                pidOffset,
+              };
 
               while (true) {
                 const now = Date.now();
@@ -279,6 +345,7 @@ export const createQwenOAuthPlugin =
                   accountStorage,
                   config.rotation_strategy,
                   now,
+                  selectOptions,
                 );
 
                 if (!selection) {
@@ -524,6 +591,11 @@ export const createQwenOAuthPlugin =
                     retryAfterMs,
                   );
                   accountStorage = recordFailure(accountStorage, accountIndex);
+                  if (response.status === 429) {
+                    healthTracker.recordRateLimit(accountIndex);
+                  } else {
+                    healthTracker.recordFailure(accountIndex);
+                  }
                   await saveAccounts(accountStorage);
                   attempts += 1;
                   if (attempts >= accountStorage.accounts.length) {
@@ -545,6 +617,7 @@ export const createQwenOAuthPlugin =
                 }
 
                 accountStorage = recordSuccess(accountStorage, accountIndex);
+                healthTracker.recordSuccess(accountIndex);
                 await saveAccounts(accountStorage);
                 return response;
               }
