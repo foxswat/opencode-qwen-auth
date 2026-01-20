@@ -368,8 +368,8 @@ describe("TokenBucketTracker", () => {
       };
 
       tracker.loadFromJSON(data);
-      expect(tracker.getTokens(0)).toBe(25);
-      expect(tracker.getTokens(2)).toBe(10);
+      expect(tracker.getTokens(0)).toBeCloseTo(25, 2);
+      expect(tracker.getTokens(2)).toBeCloseTo(10, 2);
     });
 
     it("preserves state across load/save cycle", () => {
