@@ -7,3 +7,4 @@ dist/
 .env.*
 coverage/
 test-output.txt
+opencode.json

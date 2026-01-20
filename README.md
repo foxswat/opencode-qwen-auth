@@ -85,7 +85,7 @@ Then add to your `opencode.json`:
 2. Authenticate with Qwen:
 
    ```
-   /auth
+   /connect
    ```
 
    Select **Qwen OAuth** and follow the device flow instructions.
@@ -173,8 +173,8 @@ All options can be overridden via environment variables:
 
 Add multiple accounts for higher throughput:
 
-1. Run `/auth` and complete the first login
-2. Run `/auth` again to add additional accounts
+1. Run `/connect` and complete the first login
+2. Run `/connect` again to add additional accounts
 3. The plugin automatically rotates between accounts
 
 ### Rotation Strategies
@@ -241,17 +241,17 @@ Converts SSE events from Chat Completions to Responses API format:
 
 **"invalid_grant" error**
 
-- Your refresh token has expired. Run `/auth` to re-authenticate.
+- Your refresh token has expired. Run `/connect` to re-authenticate.
 
 **Device code expired**
 
-- Complete the browser login within 5 minutes of starting `/auth`.
+- Complete the browser login within 5 minutes of starting `/connect`.
 
 ### Rate Limiting
 
 **Frequent 429 errors**
 
-- Add more accounts with `/auth`
+- Add more accounts with `/connect`
 - Increase `max_rate_limit_wait_seconds` in config
 
 ### Reset Plugin State
