@@ -3,6 +3,10 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { QwenConfigSchema, type QwenPluginConfig } from "./schema";
 
+export interface LoadedConfig extends QwenPluginConfig {
+  isExplicitStrategy: boolean;
+}
+
 function readJsonFile(path: string): Record<string, unknown> | null {
   try {
     const data = readFileSync(path, "utf-8");
@@ -21,8 +25,12 @@ function getProjectConfigPath(directory: string): string {
   return join(directory, ".opencode", "qwen.json");
 }
 
-function applyEnvOverrides(config: QwenPluginConfig): QwenPluginConfig {
+function applyEnvOverrides(config: QwenPluginConfig): {
+  config: QwenPluginConfig;
+  envHasStrategy: boolean;
+} {
   const overrides: Partial<QwenPluginConfig> = {};
+  let envHasStrategy = false;
 
   if (process.env.QWEN_OAUTH_CLIENT_ID) {
     overrides.client_id = process.env.QWEN_OAUTH_CLIENT_ID;
@@ -35,8 +43,13 @@ function applyEnvOverrides(config: QwenPluginConfig): QwenPluginConfig {
   }
   if (process.env.QWEN_ROTATION_STRATEGY) {
     const strategy = process.env.QWEN_ROTATION_STRATEGY;
-    if (strategy === "round-robin" || strategy === "sequential") {
+    if (
+      strategy === "round-robin" ||
+      strategy === "sequential" ||
+      strategy === "hybrid"
+    ) {
       overrides.rotation_strategy = strategy;
+      envHasStrategy = true;
     }
   }
   if (process.env.QWEN_PROACTIVE_REFRESH) {
@@ -57,19 +70,37 @@ function applyEnvOverrides(config: QwenPluginConfig): QwenPluginConfig {
   if (process.env.QWEN_QUIET_MODE) {
     overrides.quiet_mode = process.env.QWEN_QUIET_MODE === "true";
   }
+  if (process.env.QWEN_PID_OFFSET_ENABLED) {
+    overrides.pid_offset_enabled =
+      process.env.QWEN_PID_OFFSET_ENABLED === "true" ||
+      process.env.QWEN_PID_OFFSET_ENABLED === "1";
+  }
 
-  return QwenConfigSchema.parse({ ...config, ...overrides });
+  return {
+    config: QwenConfigSchema.parse({ ...config, ...overrides }),
+    envHasStrategy,
+  };
 }
 
-export function loadConfig(directory: string): QwenPluginConfig {
+export function loadConfig(directory: string): LoadedConfig {
   const defaults = QwenConfigSchema.parse({});
   const userConfig = readJsonFile(getUserConfigPath());
   const projectConfig = readJsonFile(getProjectConfigPath(directory));
+
+  const rawHasStrategy =
+    userConfig?.rotation_strategy !== undefined ||
+    projectConfig?.rotation_strategy !== undefined;
+
   const merged = QwenConfigSchema.parse({
     ...defaults,
     ...(userConfig ?? {}),
     ...(projectConfig ?? {}),
   });
 
-  return applyEnvOverrides(merged);
+  const { config, envHasStrategy } = applyEnvOverrides(merged);
+
+  return {
+    ...config,
+    isExplicitStrategy: rawHasStrategy || envHasStrategy,
+  };
 }

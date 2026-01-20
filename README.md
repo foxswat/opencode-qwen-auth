@@ -12,6 +12,7 @@ Qwen OAuth authentication plugin for [OpenCode](https://opencode.ai) with multi-
 
 - **Device Flow OAuth** - PKCE-secured authentication, works in headless/CI environments
 - **Multi-Account Support** - Store and rotate between multiple Qwen accounts
+- **Hybrid Account Rotation** - Smart selection using health scores, token bucket, and LRU
 - **Proactive Token Refresh** - Automatically refresh tokens before expiry
 - **Rate Limit Handling** - Detects 429 responses, rotates accounts, respects retry-after
 - **API Translation** - Bridges OpenAI Responses API ↔ Chat Completions API
@@ -111,8 +112,11 @@ To customize behavior, create `.opencode/qwen.json` (project) or `~/.config/open
   // OAuth server URL (default: https://chat.qwen.ai)
   "oauth_base_url": "https://chat.qwen.ai",
 
-  // Account rotation: "round-robin" or "sequential" (default: round-robin)
-  "rotation_strategy": "sequential",
+  // Account rotation: "hybrid", "round-robin", or "sequential" (default: hybrid)
+  "rotation_strategy": "hybrid",
+
+  // Enable PID-based offset for multi-session load distribution (default: false)
+  "pid_offset_enabled": false,
 
   // Refresh tokens before expiry (default: true)
   "proactive_refresh": true,
@@ -130,16 +134,17 @@ To customize behavior, create `.opencode/qwen.json` (project) or `~/.config/open
 
 ### Configuration Options
 
-| Option                        | Default                     | Description                                     |
-| ----------------------------- | --------------------------- | ----------------------------------------------- |
-| `base_url`                    | `https://portal.qwen.ai/v1` | API endpoint for Qwen requests                  |
-| `client_id`                   | (built-in)                  | OAuth client ID                                 |
-| `oauth_base_url`              | `https://chat.qwen.ai`      | OAuth server URL                                |
-| `rotation_strategy`           | `round-robin`               | Account rotation: `round-robin` or `sequential` |
-| `proactive_refresh`           | `true`                      | Refresh tokens before expiry                    |
-| `refresh_window_seconds`      | `300`                       | Seconds before expiry to trigger refresh        |
-| `max_rate_limit_wait_seconds` | `300`                       | Maximum wait time when rate limited             |
-| `quiet_mode`                  | `false`                     | Suppress informational messages                 |
+| Option                        | Default                     | Description                                                      |
+| ----------------------------- | --------------------------- | ---------------------------------------------------------------- |
+| `base_url`                    | `https://portal.qwen.ai/v1` | API endpoint for Qwen requests                                   |
+| `client_id`                   | (built-in)                  | OAuth client ID                                                  |
+| `oauth_base_url`              | `https://chat.qwen.ai`      | OAuth server URL                                                 |
+| `rotation_strategy`           | `hybrid`                    | Account rotation: `hybrid`, `round-robin`, or `sequential`       |
+| `pid_offset_enabled`          | `false`                     | Distribute parallel sessions across accounts using PID offset    |
+| `proactive_refresh`           | `true`                      | Refresh tokens before expiry                                     |
+| `refresh_window_seconds`      | `300`                       | Seconds before expiry to trigger refresh                         |
+| `max_rate_limit_wait_seconds` | `300`                       | Maximum wait time when rate limited                              |
+| `quiet_mode`                  | `false`                     | Suppress informational messages                                  |
 
 ### Environment Variables
 
@@ -149,6 +154,7 @@ All options can be overridden via environment variables:
 - `QWEN_OAUTH_CLIENT_ID`
 - `QWEN_OAUTH_BASE_URL`
 - `QWEN_ROTATION_STRATEGY`
+- `QWEN_PID_OFFSET_ENABLED`
 - `QWEN_PROACTIVE_REFRESH`
 - `QWEN_REFRESH_WINDOW_SECONDS`
 - `QWEN_MAX_RATE_LIMIT_WAIT_SECONDS`
@@ -173,8 +179,21 @@ Add multiple accounts for higher throughput:
 
 ### Rotation Strategies
 
+- **hybrid** (default): Smart selection combining health scores, token bucket rate limiting, and LRU. Accounts recover health passively over time.
 - **round-robin**: Cycles through accounts on each request
 - **sequential**: Uses one account until rate limited, then switches
+
+#### Hybrid Strategy Details
+
+The hybrid strategy uses a weighted scoring algorithm:
+
+- **Health Score (0-100)**: Tracks account wellness. Success rewards (+1), rate limits penalize (-10), failures penalize more (-20). Accounts passively recover +2 points/hour when rested.
+- **Token Bucket**: Client-side rate limiting (50 tokens max, regenerates 6/minute) to prevent hitting server 429s.
+- **LRU Freshness**: Prefers accounts that haven't been used recently.
+
+Score formula: `(health × 2) + (tokens × 5) + (freshness × 0.1)`
+
+Enable `pid_offset_enabled: true` when running multiple parallel sessions (e.g., oh-my-opencode) to distribute load across accounts.
 
 ## How It Works
 
