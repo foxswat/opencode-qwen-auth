@@ -1,6 +1,6 @@
 {
   "name": "opencode-qwen-auth",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Qwen OAuth authentication plugin for OpenCode with multi-account rotation and API translation",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
