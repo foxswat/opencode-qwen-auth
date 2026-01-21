@@ -10,6 +10,16 @@ import {
   TokenBucketTracker,
 } from "../src/plugin/rotation";
 
+const TOKEN_PRECISION = 2;
+
+function expectTokensClose(
+  actual: number,
+  expected: number,
+  precision = TOKEN_PRECISION,
+): void {
+  expect(actual).toBeCloseTo(expected, precision);
+}
+
 describe("HealthScoreTracker", () => {
   let tracker: HealthScoreTracker;
 
@@ -245,7 +255,7 @@ describe("TokenBucketTracker", () => {
 
   describe("initial state", () => {
     it("returns initial tokens (50) for new accounts", () => {
-      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
+      expectTokensClose(tracker.getTokens(0), 50);
     });
 
     it("has tokens available for new accounts", () => {
@@ -260,12 +270,12 @@ describe("TokenBucketTracker", () => {
   describe("consumption", () => {
     it("consumes 1 token by default", () => {
       tracker.consume(0);
-      expect(tracker.getTokens(0)).toBeCloseTo(49, 2);
+      expectTokensClose(tracker.getTokens(0), 49);
     });
 
     it("consumes specified amount", () => {
       tracker.consume(0, 5);
-      expect(tracker.getTokens(0)).toBeCloseTo(45, 0);
+      expectTokensClose(tracker.getTokens(0), 45, 0);
     });
 
     it("returns true on successful consumption", () => {
@@ -285,7 +295,7 @@ describe("TokenBucketTracker", () => {
       }
       const before = tracker.getTokens(0);
       tracker.consume(0);
-      expect(tracker.getTokens(0)).toBeCloseTo(before, 2);
+      expectTokensClose(tracker.getTokens(0), before);
     });
   });
 
@@ -310,18 +320,18 @@ describe("TokenBucketTracker", () => {
     it("refunds 1 token by default", () => {
       tracker.consume(0);
       tracker.refund(0);
-      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
+      expectTokensClose(tracker.getTokens(0), 50);
     });
 
     it("refunds specified amount", () => {
       tracker.consume(0, 10);
       tracker.refund(0, 5);
-      expect(tracker.getTokens(0)).toBeCloseTo(45, 2);
+      expectTokensClose(tracker.getTokens(0), 45);
     });
 
     it("does not exceed maxTokens on refund", () => {
       tracker.refund(0, 100);
-      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
+      expectTokensClose(tracker.getTokens(0), 50);
     });
   });
 
@@ -334,7 +344,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 60 * 1000; // 1 minute ago
 
-      expect(tracker.getTokens(0)).toBeCloseTo(46, 2); // 40 + 6
+      expectTokensClose(tracker.getTokens(0), 46); // 40 + 6
     });
 
     it("does not exceed maxTokens during regeneration", () => {
@@ -345,7 +355,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 10 * 60 * 1000; // 10 minutes ago
 
-      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
+      expectTokensClose(tracker.getTokens(0), 50);
     });
   });
 
@@ -368,8 +378,8 @@ describe("TokenBucketTracker", () => {
       };
 
       tracker.loadFromJSON(data);
-      expect(tracker.getTokens(0)).toBeCloseTo(25, 2);
-      expect(tracker.getTokens(2)).toBeCloseTo(10, 2);
+      expectTokensClose(tracker.getTokens(0), 25);
+      expectTokensClose(tracker.getTokens(2), 10);
     });
 
     it("preserves state across load/save cycle", () => {
@@ -380,8 +390,8 @@ describe("TokenBucketTracker", () => {
       const newTracker = new TokenBucketTracker();
       newTracker.loadFromJSON(json);
 
-      expect(newTracker.getTokens(0)).toBeCloseTo(tracker.getTokens(0), 2);
-      expect(newTracker.getTokens(1)).toBeCloseTo(tracker.getTokens(1), 2);
+      expectTokensClose(newTracker.getTokens(0), tracker.getTokens(0));
+      expectTokensClose(newTracker.getTokens(1), tracker.getTokens(1));
     });
   });
 
@@ -393,7 +403,7 @@ describe("TokenBucketTracker", () => {
 
     it("uses custom initialTokens", () => {
       const custom = new TokenBucketTracker({ initialTokens: 25 });
-      expect(custom.getTokens(0)).toBeCloseTo(25, 2);
+      expectTokensClose(custom.getTokens(0), 25);
     });
 
     it("uses custom regeneration rate", () => {
@@ -409,7 +419,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 60 * 1000; // 1 minute ago
 
-      expect(custom.getTokens(0)).toBeCloseTo(32, 2); // 20 + 12
+      expectTokensClose(custom.getTokens(0), 32); // 20 + 12
     });
   });
 });
