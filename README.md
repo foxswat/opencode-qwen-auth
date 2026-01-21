@@ -310,3 +310,51 @@ npm test
 ## License
 
 Apache-2.0
+
+## Roadmap
+
+Planned features and improvements for future releases:
+
+### 🔴 Next Release (v0.4.0)
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Rate Limit Deduplication** | Ignore duplicate 429s within 2s window to prevent backoff cascades | Planned |
+| **Exponential Backoff with Jitter** | Add randomness to retry delays to prevent thundering herd | Planned |
+| **Schema Cleaning** | Remove unsupported JSON Schema keys (`const`, `$ref`, `$defs`) that cause API rejections | Planned |
+
+### 🟡 Short-term (v0.5.0)
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Circuit Breaker** | Temporarily stop requests to failing accounts after consecutive failures | Planned |
+| **Proactive Health Checks** | Validate tokens before use, not just after failures | Planned |
+| **CLI: Status Command** | `bunx opencode-qwen-auth status` to show account health and token info | Planned |
+
+### 🟢 Medium-term
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Session Recovery** | Handle `tool_result_missing` errors from interrupted conversations | Research |
+| **CLI: Uninstall Command** | Clean removal from opencode.json | Planned |
+| **Configurable Retry Strategies** | User-selectable aggressive/conservative retry modes | Research |
+
+### 🔵 Future Consideration
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Dual Quota System** | Track separate quotas per API endpoint if Qwen supports | Research |
+| **OAuth Server Fallback** | Try backup auth servers when primary fails | Research |
+| **Rate Limit Prediction** | Use historical patterns to predict when limits will hit | Research |
+
+### ✅ Completed
+
+| Feature | Version | Description |
+|---------|---------|-------------|
+| Hybrid Account Rotation | v0.3.0 | Health scores, token bucket, LRU freshness |
+| Migration Notices | v0.3.0 | Graceful upgrade path for breaking changes |
+| PID Offset | v0.3.0 | Multi-session load distribution |
+
+---
+
+**Want to contribute?** See [AGENTS.md](AGENTS.md) for development guidelines.
