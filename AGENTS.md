@@ -67,7 +67,10 @@ To make changes:
 2. Make changes and commit
 3. Push and create PR: `git push -u origin feature/my-change && gh pr create`
 4. Wait for CI to pass (ubuntu, macos, windows)
-5. Merge PR (branch auto-deletes after merge)
+5. Wait for Codex review emoji on the PR summary comment:
+   - 👀 = Codex reviewing
+   - 👍 = no issues found
+6. Merge PR (branch auto-deletes after merge)
 
 ## Release Process
 
