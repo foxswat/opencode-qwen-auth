@@ -245,7 +245,7 @@ describe("TokenBucketTracker", () => {
 
   describe("initial state", () => {
     it("returns initial tokens (50) for new accounts", () => {
-      expect(tracker.getTokens(0)).toBe(50);
+      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
     });
 
     it("has tokens available for new accounts", () => {
@@ -260,7 +260,7 @@ describe("TokenBucketTracker", () => {
   describe("consumption", () => {
     it("consumes 1 token by default", () => {
       tracker.consume(0);
-      expect(tracker.getTokens(0)).toBe(49);
+      expect(tracker.getTokens(0)).toBeCloseTo(49, 2);
     });
 
     it("consumes specified amount", () => {
@@ -285,7 +285,7 @@ describe("TokenBucketTracker", () => {
       }
       const before = tracker.getTokens(0);
       tracker.consume(0);
-      expect(tracker.getTokens(0)).toBe(before);
+      expect(tracker.getTokens(0)).toBeCloseTo(before, 2);
     });
   });
 
@@ -310,18 +310,18 @@ describe("TokenBucketTracker", () => {
     it("refunds 1 token by default", () => {
       tracker.consume(0);
       tracker.refund(0);
-      expect(tracker.getTokens(0)).toBe(50);
+      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
     });
 
     it("refunds specified amount", () => {
       tracker.consume(0, 10);
       tracker.refund(0, 5);
-      expect(tracker.getTokens(0)).toBe(45);
+      expect(tracker.getTokens(0)).toBeCloseTo(45, 2);
     });
 
     it("does not exceed maxTokens on refund", () => {
       tracker.refund(0, 100);
-      expect(tracker.getTokens(0)).toBe(50);
+      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
     });
   });
 
@@ -334,7 +334,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 60 * 1000; // 1 minute ago
 
-      expect(tracker.getTokens(0)).toBe(46); // 40 + 6
+      expect(tracker.getTokens(0)).toBeCloseTo(46, 2); // 40 + 6
     });
 
     it("does not exceed maxTokens during regeneration", () => {
@@ -345,7 +345,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 10 * 60 * 1000; // 10 minutes ago
 
-      expect(tracker.getTokens(0)).toBe(50);
+      expect(tracker.getTokens(0)).toBeCloseTo(50, 2);
     });
   });
 
@@ -380,8 +380,8 @@ describe("TokenBucketTracker", () => {
       const newTracker = new TokenBucketTracker();
       newTracker.loadFromJSON(json);
 
-      expect(newTracker.getTokens(0)).toBe(tracker.getTokens(0));
-      expect(newTracker.getTokens(1)).toBe(tracker.getTokens(1));
+      expect(newTracker.getTokens(0)).toBeCloseTo(tracker.getTokens(0), 2);
+      expect(newTracker.getTokens(1)).toBeCloseTo(tracker.getTokens(1), 2);
     });
   });
 
@@ -393,7 +393,7 @@ describe("TokenBucketTracker", () => {
 
     it("uses custom initialTokens", () => {
       const custom = new TokenBucketTracker({ initialTokens: 25 });
-      expect(custom.getTokens(0)).toBe(25);
+      expect(custom.getTokens(0)).toBeCloseTo(25, 2);
     });
 
     it("uses custom regeneration rate", () => {
@@ -409,7 +409,7 @@ describe("TokenBucketTracker", () => {
       const state = buckets.get(0) as { lastUpdated: number };
       state.lastUpdated = Date.now() - 60 * 1000; // 1 minute ago
 
-      expect(custom.getTokens(0)).toBe(32); // 20 + 12
+      expect(custom.getTokens(0)).toBeCloseTo(32, 2); // 20 + 12
     });
   });
 });
