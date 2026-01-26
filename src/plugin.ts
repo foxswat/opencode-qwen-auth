@@ -14,7 +14,11 @@ import {
   upsertAccount,
 } from "./plugin/account";
 import { accessTokenExpired, isOAuthAuth } from "./plugin/auth";
-import { type LoadedConfig, loadConfig } from "./plugin/config";
+import {
+  type LoadedConfig,
+  loadConfig,
+  updateUserConfig,
+} from "./plugin/config";
 import {
   createLogger,
   initDebugFromEnv,
@@ -266,6 +270,7 @@ function getPidOffset(config: LoadedConfig): number {
 
 async function showMigrationNoticeIfNeeded(
   config: LoadedConfig,
+  client: PluginContext["client"],
 ): Promise<void> {
   // Only show migration notice to upgrading users (those with existing accounts)
   // New users should not see this notice since they never experienced the old default
@@ -277,12 +282,17 @@ async function showMigrationNoticeIfNeeded(
   ) {
     const existingAccounts = await loadAccounts();
     if (existingAccounts && existingAccounts.accounts.length > 0) {
-      console.log(
-        "[qwen-auth] Note: Default rotation strategy changed from 'round-robin' to 'hybrid'.",
-      );
-      console.log(
-        '            Set rotation_strategy: "round-robin" in config to keep previous behavior.',
-      );
+      await client.tui.showToast({
+        body: {
+          title: "Migration Notice",
+          message:
+            'Default rotation strategy changed from "round-robin" to "hybrid". Set rotation_strategy in config if you prefer the old behavior.',
+          variant: "warning",
+          duration: 8000,
+        },
+      });
+
+      await updateUserConfig({ migration_notice_shown: true });
     }
   }
 }
@@ -294,7 +304,7 @@ export const createQwenOAuthPlugin =
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
     initializeTrackers(config);
-    await showMigrationNoticeIfNeeded(config);
+    await showMigrationNoticeIfNeeded(config, client);
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {

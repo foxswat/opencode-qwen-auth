@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { QwenConfigSchema, type QwenPluginConfig } from "./schema";
 
 export interface LoadedConfig extends QwenPluginConfig {
@@ -23,6 +23,17 @@ function getUserConfigPath(): string {
 
 function getProjectConfigPath(directory: string): string {
   return join(directory, ".opencode", "qwen.json");
+}
+
+export async function updateUserConfig(
+  updates: Partial<QwenPluginConfig>,
+): Promise<void> {
+  const configPath = getUserConfigPath();
+  const existing = readJsonFile(configPath) ?? {};
+  const merged = { ...existing, ...updates };
+
+  mkdirSync(dirname(configPath), { recursive: true });
+  writeFileSync(configPath, JSON.stringify(merged, null, 2), "utf-8");
 }
 
 function applyEnvOverrides(config: QwenPluginConfig): {
