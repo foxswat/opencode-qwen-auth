@@ -304,7 +304,12 @@ export const createQwenOAuthPlugin =
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
     initializeTrackers(config);
-    await showMigrationNoticeIfNeeded(config, client);
+
+    try {
+      await showMigrationNoticeIfNeeded(config, client);
+    } catch (err) {
+      logger.error("Migration notice failed (non-critical)", { err });
+    }
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {
