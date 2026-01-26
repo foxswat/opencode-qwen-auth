@@ -264,18 +264,26 @@ function getPidOffset(config: LoadedConfig): number {
   return process.pid;
 }
 
-function showMigrationNoticeIfNeeded(config: LoadedConfig): void {
+async function showMigrationNoticeIfNeeded(
+  config: LoadedConfig,
+): Promise<void> {
+  // Only show migration notice to upgrading users (those with existing accounts)
+  // New users should not see this notice since they never experienced the old default
   if (
     config.rotation_strategy === "hybrid" &&
     !config.isExplicitStrategy &&
-    !config.quiet_mode
+    !config.quiet_mode &&
+    !config.migration_notice_shown
   ) {
-    console.log(
-      "[qwen-auth] Note: Default rotation strategy changed from 'round-robin' to 'hybrid'.",
-    );
-    console.log(
-      '            Set rotation_strategy: "round-robin" in config to keep previous behavior.',
-    );
+    const existingAccounts = await loadAccounts();
+    if (existingAccounts && existingAccounts.accounts.length > 0) {
+      console.log(
+        "[qwen-auth] Note: Default rotation strategy changed from 'round-robin' to 'hybrid'.",
+      );
+      console.log(
+        '            Set rotation_strategy: "round-robin" in config to keep previous behavior.',
+      );
+    }
   }
 }
 
@@ -286,7 +294,7 @@ export const createQwenOAuthPlugin =
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
     initializeTrackers(config);
-    showMigrationNoticeIfNeeded(config);
+    await showMigrationNoticeIfNeeded(config);
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {
