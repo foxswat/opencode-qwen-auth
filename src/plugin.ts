@@ -14,7 +14,11 @@ import {
   upsertAccount,
 } from "./plugin/account";
 import { accessTokenExpired, isOAuthAuth } from "./plugin/auth";
-import { type LoadedConfig, loadConfig } from "./plugin/config";
+import {
+  type LoadedConfig,
+  loadConfig,
+  updateUserConfig,
+} from "./plugin/config";
 import {
   createLogger,
   initDebugFromEnv,
@@ -264,18 +268,32 @@ function getPidOffset(config: LoadedConfig): number {
   return process.pid;
 }
 
-function showMigrationNoticeIfNeeded(config: LoadedConfig): void {
+async function showMigrationNoticeIfNeeded(
+  config: LoadedConfig,
+  client: PluginContext["client"],
+): Promise<void> {
+  // Only show migration notice to upgrading users (those with existing accounts)
+  // New users should not see this notice since they never experienced the old default
   if (
     config.rotation_strategy === "hybrid" &&
     !config.isExplicitStrategy &&
-    !config.quiet_mode
+    !config.quiet_mode &&
+    !config.migration_notice_shown
   ) {
-    console.log(
-      "[qwen-auth] Note: Default rotation strategy changed from 'round-robin' to 'hybrid'.",
-    );
-    console.log(
-      '            Set rotation_strategy: "round-robin" in config to keep previous behavior.',
-    );
+    const existingAccounts = await loadAccounts();
+    if (existingAccounts && existingAccounts.accounts.length > 0) {
+      await client.tui.showToast({
+        body: {
+          title: "Migration Notice",
+          message:
+            'Default rotation strategy changed from "round-robin" to "hybrid". Set rotation_strategy in config if you prefer the old behavior.',
+          variant: "warning",
+          duration: 8000,
+        },
+      });
+
+      await updateUserConfig({ migration_notice_shown: true });
+    }
   }
 }
 
@@ -286,7 +304,12 @@ export const createQwenOAuthPlugin =
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
     initializeTrackers(config);
-    showMigrationNoticeIfNeeded(config);
+
+    try {
+      await showMigrationNoticeIfNeeded(config, client);
+    } catch (err) {
+      logger.error("Migration notice failed (non-critical)", { err });
+    }
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {
