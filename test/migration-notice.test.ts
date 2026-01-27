@@ -8,10 +8,14 @@ describe("migration notice behavior", () => {
   let testDir: string;
   let mockClient: any;
   let showMigrationNoticeIfNeeded: any;
+  let savedXdgConfigHome: string | undefined;
 
   beforeEach(async () => {
+    savedXdgConfigHome = process.env.XDG_CONFIG_HOME;
     testDir = join(tmpdir(), `qwen-migration-notice-test-${Date.now()}`);
     mkdirSync(join(testDir, ".opencode"), { recursive: true });
+    mkdirSync(join(testDir, "config", "opencode"), { recursive: true });
+    process.env.XDG_CONFIG_HOME = join(testDir, "config");
 
     mockClient = {
       tui: {
@@ -21,6 +25,11 @@ describe("migration notice behavior", () => {
   });
 
   afterEach(() => {
+    if (savedXdgConfigHome !== undefined) {
+      process.env.XDG_CONFIG_HOME = savedXdgConfigHome;
+    } else {
+      delete process.env.XDG_CONFIG_HOME;
+    }
     rmSync(testDir, { recursive: true, force: true });
   });
 

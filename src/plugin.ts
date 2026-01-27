@@ -282,16 +282,27 @@ async function showMigrationNoticeIfNeeded(
   ) {
     const existingAccounts = await loadAccounts();
     if (existingAccounts && existingAccounts.accounts.length > 0) {
-      await client.tui.showToast({
-        body: {
-          title: "Migration Notice",
-          message:
-            'Default rotation strategy changed from "round-robin" to "hybrid". Set rotation_strategy in config if you prefer the old behavior.',
-          variant: "warning",
-          duration: 8000,
-        },
-      });
+      // Best-effort toast with timeout - TUI may not be ready during plugin init
+      // Swallow errors to prevent blocking startup (see issue #13)
+      const toastAttempt = client.tui
+        .showToast({
+          body: {
+            title: "Migration Notice",
+            message:
+              'Default rotation strategy changed from "round-robin" to "hybrid". Set rotation_strategy in config if you prefer the old behavior.',
+            variant: "warning",
+            duration: 8000,
+          },
+        })
+        .catch((err) => {
+          logger.debug("Toast failed (non-critical)", { err });
+        });
 
+      // Don't block forever - timeout after 1500ms
+      await Promise.race([toastAttempt, sleep(1500)]);
+
+      // Mark as shown after first attempt, even if toast failed/timed out
+      // This prevents repeated hang attempts on every startup
       await updateUserConfig({ migration_notice_shown: true });
     }
   }
@@ -305,11 +316,10 @@ export const createQwenOAuthPlugin =
     initDebugFromEnv();
     initializeTrackers(config);
 
-    try {
-      await showMigrationNoticeIfNeeded(config, client);
-    } catch (err) {
-      logger.error("Migration notice failed (non-critical)", { err });
-    }
+    // Fire-and-forget: migration notice must not block plugin init (see issue #13)
+    void showMigrationNoticeIfNeeded(config, client).catch((err) => {
+      logger.debug("Migration notice failed (non-critical)", { err });
+    });
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {
