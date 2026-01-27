@@ -1,10 +1,7 @@
-import { promises as fs, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
-import { createLogger } from "../logger";
+import { join } from "node:path";
 import { QwenConfigSchema, type QwenPluginConfig } from "./schema";
-
-const logger = createLogger("config");
 
 export interface LoadedConfig extends QwenPluginConfig {
   isExplicitStrategy: boolean;
@@ -26,21 +23,6 @@ function getUserConfigPath(): string {
 
 function getProjectConfigPath(directory: string): string {
   return join(directory, ".opencode", "qwen.json");
-}
-
-export async function updateUserConfig(
-  updates: Partial<QwenPluginConfig>,
-): Promise<void> {
-  try {
-    const configPath = getUserConfigPath();
-    const existing = readJsonFile(configPath) ?? {};
-    const merged = { ...existing, ...updates };
-
-    await fs.mkdir(dirname(configPath), { recursive: true });
-    await fs.writeFile(configPath, JSON.stringify(merged, null, 2), "utf-8");
-  } catch (err) {
-    logger.error("Failed to update user config", { err });
-  }
 }
 
 function applyEnvOverrides(config: QwenPluginConfig): {

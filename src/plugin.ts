@@ -14,11 +14,7 @@ import {
   upsertAccount,
 } from "./plugin/account";
 import { accessTokenExpired, isOAuthAuth } from "./plugin/auth";
-import {
-  type LoadedConfig,
-  loadConfig,
-  updateUserConfig,
-} from "./plugin/config";
+import { type LoadedConfig, loadConfig } from "./plugin/config";
 import {
   createLogger,
   initDebugFromEnv,
@@ -268,46 +264,6 @@ function getPidOffset(config: LoadedConfig): number {
   return process.pid;
 }
 
-async function showMigrationNoticeIfNeeded(
-  config: LoadedConfig,
-  client: PluginContext["client"],
-): Promise<void> {
-  // Only show migration notice to upgrading users (those with existing accounts)
-  // New users should not see this notice since they never experienced the old default
-  if (
-    config.rotation_strategy === "hybrid" &&
-    !config.isExplicitStrategy &&
-    !config.quiet_mode &&
-    !config.migration_notice_shown
-  ) {
-    const existingAccounts = await loadAccounts();
-    if (existingAccounts && existingAccounts.accounts.length > 0) {
-      // Best-effort toast with timeout - TUI may not be ready during plugin init
-      // Swallow errors to prevent blocking startup (see issue #13)
-      const toastAttempt = client.tui
-        .showToast({
-          body: {
-            title: "Migration Notice",
-            message:
-              'Default rotation strategy changed from "round-robin" to "hybrid". Set rotation_strategy in config if you prefer the old behavior.',
-            variant: "warning",
-            duration: 8000,
-          },
-        })
-        .catch((err) => {
-          logger.debug("Toast failed (non-critical)", { err });
-        });
-
-      // Don't block forever - timeout after 1500ms
-      await Promise.race([toastAttempt, sleep(1500)]);
-
-      // Mark as shown after first attempt, even if toast failed/timed out
-      // This prevents repeated hang attempts on every startup
-      await updateUserConfig({ migration_notice_shown: true });
-    }
-  }
-}
-
 export const createQwenOAuthPlugin =
   (providerId: string): Plugin =>
   async ({ client, directory }: PluginContext) => {
@@ -315,11 +271,6 @@ export const createQwenOAuthPlugin =
     setLoggerQuietMode(config.quiet_mode);
     initDebugFromEnv();
     initializeTrackers(config);
-
-    // Fire-and-forget: migration notice must not block plugin init (see issue #13)
-    void showMigrationNoticeIfNeeded(config, client).catch((err) => {
-      logger.debug("Migration notice failed (non-critical)", { err });
-    });
 
     const pidOffset = getPidOffset(config);
     logger.debug("Plugin initialized", {
