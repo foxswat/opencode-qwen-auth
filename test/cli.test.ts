@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { install } from "../src/cli/install";
+import { install, installWithPrompt } from "../src/cli/install";
 
 describe("CLI installer", () => {
   let testDir: string;
@@ -61,6 +62,26 @@ describe("CLI installer", () => {
       expect(config.someOtherSetting).toBe(true);
       expect(config.plugin).toContain("opencode-qwen-auth");
       expect(config.provider.qwen).toBeDefined();
+    });
+
+    it("should create timestamped backup before modifying config", () => {
+      const existingConfig = {
+        $schema: "https://opencode.ai/config.json",
+        someOtherSetting: true,
+      };
+      writeFileSync(
+        join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const result = install();
+
+      expect(result.success).toBe(true);
+      const files = readdirSync(testDir);
+      const backups = files.filter((file) =>
+        /^opencode\.json\.\d{8}-\d{6}\.bak$/.test(file),
+      );
+      expect(backups.length).toBeGreaterThanOrEqual(1);
     });
 
     it("should preserve existing plugins", () => {
@@ -203,6 +224,16 @@ describe("CLI installer", () => {
       expect(config.provider.qwen.models["qwen3-vl-plus"].attachment).toBe(
         true,
       );
+    });
+
+    it("should complete without prompting when skipPrompt is true", async () => {
+      const result = await installWithPrompt({
+        global: false,
+        skipPrompt: true,
+      });
+
+      expect(result.success).toBe(true);
+      expect(existsSync(result.configPath)).toBe(true);
     });
   });
 });
