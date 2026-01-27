@@ -262,6 +262,22 @@ To start fresh, delete the accounts file:
 rm ~/.config/opencode/qwen-auth-accounts.json
 ```
 
+### Blank Screen / Startup Hang
+
+If OpenCode shows a blank screen after installing this plugin (especially on versions before v0.4.0), add one of these to `~/.config/opencode/qwen.json`:
+
+```json
+{ "migration_notice_shown": true }
+```
+
+Or:
+
+```json
+{ "quiet_mode": true }
+```
+
+This issue was fixed in v0.4.0. Upgrade to the latest version to resolve permanently.
+
 ## Development
 
 This project uses [Bun](https://bun.sh) for development.
