@@ -29,5 +29,15 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
 
+      - name: Determine npm tag
+        id: npm-tag
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --tag ${{ steps.npm-tag.outputs.tag }}
