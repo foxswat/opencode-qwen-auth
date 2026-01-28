@@ -351,8 +351,8 @@ Planned features and improvements for future releases:
 
 | Feature | Version | Description |
 |---------|---------|-------------|
+| CLI Installer Safety | v0.3.4 | Preview, backup, `--yes` flag for CI automation |
 | Hybrid Account Rotation | v0.3.0 | Health scores, token bucket, LRU freshness |
-| Migration Notices | v0.3.0 | Graceful upgrade path for breaking changes |
 | PID Offset | v0.3.0 | Multi-session load distribution |
 
 ---
