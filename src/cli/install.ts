@@ -1,7 +1,14 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import prompts from "prompts";
 
 const PLUGIN_NAME = "opencode-qwen-auth";
 
@@ -117,6 +124,20 @@ function saveConfig(configPath: string, config: OpencodeConfig): void {
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
 }
 
+function createBackup(configPath: string): string | null {
+  if (!existsSync(configPath)) {
+    return null;
+  }
+
+  const now = new Date();
+  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+  const backupName = `${basename(configPath)}.${timestamp}.bak`;
+  const backupPath = join(dirname(configPath), backupName);
+
+  copyFileSync(configPath, backupPath);
+  return backupPath;
+}
+
 function hasPlugin(config: OpencodeConfig): boolean {
   if (!config.plugin || !Array.isArray(config.plugin)) {
     return false;
@@ -169,7 +190,37 @@ function addProvider(config: OpencodeConfig): OpencodeConfig {
   return updated;
 }
 
-function printSuccess(configPath: string, _isNew: boolean): void {
+function showDiff(before: OpencodeConfig, after: OpencodeConfig): void {
+  console.log("");
+  console.log("Preview changes (before/after):");
+  console.log("");
+  console.log("BEFORE:");
+  console.log(JSON.stringify(before, null, 2));
+  console.log("");
+  console.log("AFTER:");
+  console.log(JSON.stringify(after, null, 2));
+  console.log("");
+  console.log("Changes:");
+
+  const changeLines: string[] = [];
+  if (!hasPlugin(before) && hasPlugin(after)) {
+    changeLines.push(`Added plugin: ${PLUGIN_NAME}`);
+  }
+  if (!hasQwenProvider(before) && hasQwenProvider(after)) {
+    changeLines.push("Added provider: qwen");
+  }
+
+  if (changeLines.length === 0) {
+    console.log("No changes required.");
+  } else {
+    for (const line of changeLines) {
+      console.log(line);
+    }
+  }
+  console.log("");
+}
+
+function printSuccess(configPath: string): void {
   console.log("");
   console.log("\x1b[32m✓\x1b[0m Qwen OAuth plugin installed successfully!");
   console.log("");
@@ -233,8 +284,6 @@ export function install(options: { global?: boolean } = {}): {
   }
 
   let config = existsSync(configPath) ? loadConfig(configPath) : {};
-  const _isNew = Object.keys(config).length === 0;
-
   const alreadyHasPlugin = hasPlugin(config);
   const alreadyHasProvider = hasQwenProvider(config);
 
@@ -245,24 +294,71 @@ export function install(options: { global?: boolean } = {}): {
   config = addPlugin(config);
   config = addProvider(config);
 
+  const backupPath = createBackup(configPath);
+  if (backupPath) {
+    console.log(`Created backup: ${backupPath}`);
+  }
   saveConfig(configPath, config);
 
   return { success: true, configPath, alreadyInstalled: false };
 }
 
-export function main(args: string[] = process.argv.slice(2)): void {
+export async function installWithPrompt(
+  options: { global?: boolean; skipPrompt?: boolean } = {},
+): Promise<{
+  success: boolean;
+  configPath: string;
+  alreadyInstalled: boolean;
+}> {
+  let configPath: string;
+
+  if (options.global) {
+    configPath = getGlobalConfigPath();
+  } else {
+    const existingConfig = findConfigPath();
+    configPath = existingConfig || join(process.cwd(), "opencode.json");
+  }
+
+  const before = existsSync(configPath) ? loadConfig(configPath) : {};
+  let after = addPlugin(before);
+  after = addProvider(after);
+
+  if (!options.skipPrompt) {
+    showDiff(before, after);
+    const response = await prompts({
+      type: "confirm",
+      name: "value",
+      message: "Proceed with installation?",
+      initial: true,
+    });
+
+    if (!response.value) {
+      return { success: false, configPath, alreadyInstalled: false };
+    }
+  }
+
+  return install({ global: options.global });
+}
+
+export async function main(
+  args: string[] = process.argv.slice(2),
+): Promise<void> {
   const command = args[0];
   const flags = args.slice(1);
 
   switch (command) {
     case "install": {
       const isGlobal = flags.includes("--global") || flags.includes("-g");
-      const result = install({ global: isGlobal });
+      const skipPrompt = flags.includes("--yes") || flags.includes("-y");
+      const result = await installWithPrompt({
+        global: isGlobal,
+        skipPrompt,
+      });
 
       if (result.alreadyInstalled) {
         printAlreadyInstalled();
       } else {
-        printSuccess(result.configPath, false);
+        printSuccess(result.configPath);
       }
       break;
     }
@@ -285,4 +381,4 @@ export function main(args: string[] = process.argv.slice(2)): void {
   }
 }
 
-main();
+main().catch(console.error);

@@ -66,8 +66,8 @@ Then add to your `opencode.json`:
         "compatibility": "strict"
       },
       "models": {
-        "qwen3-coder-plus": { "contextWindow": 1048576 },
-        "qwen3-vl-plus": { "contextWindow": 262144, "attachment": true }
+        "qwen3-coder-plus": {},
+        "qwen3-vl-plus": { "attachment": true }
       }
     }
   }
@@ -261,22 +261,6 @@ To start fresh, delete the accounts file:
 ```bash
 rm ~/.config/opencode/qwen-auth-accounts.json
 ```
-
-### Blank Screen / Startup Hang
-
-If OpenCode shows a blank screen after installing this plugin (especially on versions before v0.4.0), add one of these to `~/.config/opencode/qwen.json`:
-
-```json
-{ "migration_notice_shown": true }
-```
-
-Or:
-
-```json
-{ "quiet_mode": true }
-```
-
-This issue was fixed in v0.4.0. Upgrade to the latest version to resolve permanently.
 
 ## Development
 

@@ -75,6 +75,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "prompts": "^2.4.2",
     "proper-lockfile": "^4.1.2",
     "zod": "^3.24.0"
   }

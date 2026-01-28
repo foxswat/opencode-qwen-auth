@@ -30,7 +30,6 @@ export const QwenConfigSchema = z.object({
   refresh_window_seconds: z.number().min(0).default(300),
   max_rate_limit_wait_seconds: z.number().min(0).default(300),
   quiet_mode: z.boolean().default(false),
-  migration_notice_shown: z.boolean().optional().default(false),
   pid_offset_enabled: z.boolean().default(false),
   health_score: HealthScoreConfigSchema.optional(),
   token_bucket: TokenBucketConfigSchema.optional(),
