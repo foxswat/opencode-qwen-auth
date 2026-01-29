@@ -5,20 +5,24 @@
 [![CI](https://github.com/foxswat/opencode-qwen-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/foxswat/opencode-qwen-auth/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Built with Bun](https://img.shields.io/badge/Built%20with-Bun-black?logo=bun)](https://bun.sh)
-[![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/fox445353) ![Bitcoin](https://img.shields.io/badge/Bitcoin-000000?logo=bitcoin&logoColor=white) ![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?logo=ethereum&logoColor=white) ![USDT](https://img.shields.io/badge/USDT-26A17B?logo=tether&logoColor=white)
+[![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/fox445353) [![Bitcoin](https://img.shields.io/badge/Bitcoin-000000?logo=bitcoin&logoColor=white)](#-donate-crypto-addresses) [![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?logo=ethereum&logoColor=white)](#-donate-crypto-addresses) [![USDT](https://img.shields.io/badge/USDT-26A17B?logo=tether&logoColor=white)](#-donate-crypto-addresses)
 
 Qwen OAuth authentication plugin for [OpenCode](https://opencode.ai) with multi-account rotation, proactive token refresh, and automatic API translation.
 
-<details>
+<details id="-donate-crypto-addresses">
 <summary>💝 Donate (Crypto addresses)</summary>
 
 ### Bitcoin (BTC)
+
+<img src=".github/qr-codes/btc.png" alt="Bitcoin QR Code" width="200">
 
 ```text
 bc1q76tzf55t2mkwhpg3w7lfnvzmhmmfvwkw4uphfs
 ```
 
 ### Ethereum (ETH)
+
+<img src=".github/qr-codes/eth.png" alt="Ethereum QR Code" width="200">
 
 ```text
 0x902B403852b632be0F8d2175C9d86bCF77B2319A
@@ -27,6 +31,8 @@ bc1q76tzf55t2mkwhpg3w7lfnvzmhmmfvwkw4uphfs
 ### USDT (ERC-20)
 
 Use the same Ethereum address above:
+
+<img src=".github/qr-codes/usdt.png" alt="USDT (ERC-20) QR Code" width="200">
 
 ```text
 0x902B403852b632be0F8d2175C9d86bCF77B2319A
